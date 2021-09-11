@@ -1,6 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+
+from .validators import UniquePhoneValidator
 
 
 User = get_user_model()
@@ -28,12 +31,9 @@ class Employee(models.Model):
     surname = models.CharField('Фамилия', max_length=128)
     middlename = models.CharField('Отчество', max_length=128, blank=True)
     position = models.CharField('Должность', max_length=128, blank=True)
-    organization = models.ForeignKey(Organization,
-                                     on_delete=models.SET_NULL,
-                                     blank=False,
-                                     null=True,
-                                     verbose_name='Организация',
-                                     related_name='employees')
+    organizations = models.ManyToManyField(
+        Organization, related_name='employees',
+        blank=True, verbose_name='Организации')
 
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{8,15}$',
@@ -46,10 +46,9 @@ class Employee(models.Model):
         verbose_name='Рабочий телефон'
         )
     personal_phone = models.CharField(
-        validators=[phone_regex],
+        validators=[phone_regex, UniquePhoneValidator],
         max_length=17,
         blank=True,
-        unique=True,
         verbose_name='Личный телефон')
     fax = models.CharField(
         validators=[phone_regex],
@@ -68,7 +67,11 @@ class Employee(models.Model):
     def __str__(self):
         return self.surname + ' ' + self.name
 
+    def clean(self):
+        if not (self.personal_phone or self.work_phone or self.fax):
+            raise ValidationError('Хотя бы один телефон обязателен')
+
     @property
-    def get_full_name(self):
+    def full_name(self):
         fname = f'{self.surname} {self.name} {self.middlename}'.strip()
         return fname
