@@ -1,7 +1,6 @@
 from django.db import DataError
 
 from rest_framework.exceptions import ValidationError
-from rest_framework.utils.representation import smart_repr
 from rest_framework.validators import UniqueValidator
 
 

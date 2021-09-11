@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
@@ -6,7 +6,20 @@ from django.db import models
 from .validators import UniquePhoneValidator
 
 
-User = get_user_model()
+class User(AbstractUser):
+
+    email = models.EmailField(
+        'email',
+        unique=True,
+        help_text='Email адрес. Должен быть уникальным.',
+        error_messages={
+            'unique': 'Пользователь с таким Email уже существует.',
+        })
+
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+        ordering = ('-id',)
 
 
 class Organization(models.Model):

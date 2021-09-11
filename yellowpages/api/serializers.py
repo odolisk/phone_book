@@ -1,11 +1,28 @@
 from rest_framework import serializers
 
-from .models import Employee, Organization
+from .models import Employee, Organization, User
 
 
 def phone_required(fields):
     if all(value is None for value in fields):
         raise serializers.ValidationError('This field is required')
+
+
+class UserAuthSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class UserObtainTokenSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=150)
+
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        fields = ('first_name', 'last_name', 'username',
+                  'bio', 'email', 'role')
+        model = User
 
 
 class ModelSerializer(serializers.ModelSerializer):

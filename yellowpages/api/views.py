@@ -1,17 +1,47 @@
-from rest_framework import filters, viewsets
+from rest_framework import filters, permissions, status, viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import AccessToken
 
 from django.shortcuts import get_object_or_404
 
-from .models import Employee, Organization
+from .models import Organization, User
 from .paginators import CustomPageNumberPagination
-from .serializers import (EmployeeSerializer, OrganizationsListSerializer,
-                          OrganizationsRetriveSerializer)
+from .permissions import IsAuthorOrAuthReadOnly
+from .serializers import (
+    EmployeeSerializer, OrganizationsListSerializer,
+    OrganizationsRetriveSerializer, UserObtainTokenSerializer)
+
+
+@api_view(('POST',))
+@permission_classes([permissions.AllowAny])
+def obtain_token(request):
+    """
+    Takes email and password from request and
+    return access token.
+    """
+    serializer = UserObtainTokenSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    email = serializer.validated_data['email']
+    user = get_object_or_404(User, email=email)
+    password = serializer.validated_data['password']
+
+    if not user.check_password(password):
+        res = {'password': f'Пароль не верен для email: {email}'}
+        return Response(
+            data=res,
+            status=status.HTTP_400_BAD_REQUEST)
+
+    token = AccessToken.for_user(user)
+    return Response({'token': str(token)},
+                    status=status.HTTP_200_OK)
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     pagination_class = CustomPageNumberPagination
     filter_backends = (filters.SearchFilter,)
+    permission_classes = (IsAuthorOrAuthReadOnly, )
     search_fields = ('name',)
     lookup_field = 'id'
 
