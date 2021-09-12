@@ -7,15 +7,16 @@ from .models import Employee, Organization, User
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'address', 'description')
+    list_display = ('pk', 'name', 'address', 'description',)
     search_fields = ('name',)
     ordering = ('name',)
+    readonly_fields = ('author', )
 
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'surname', 'name', 'middlename',
-                    'position')
+                    'position', 'personal_phone', 'work_phone', 'fax')
     search_fields = ('surname', 'name', 'middlename',)
     ordering = ('surname', 'name',)
 

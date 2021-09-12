@@ -26,6 +26,15 @@ class Organization(models.Model):
     name = models.CharField('Название', max_length=128, unique=True)
     address = models.TextField('Адрес', blank=True)
     description = models.TextField('Описание', blank=True)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Создано',
+        related_name='organization_author')
+
+    editors = models.ManyToManyField(
+        User, related_name='organization_editors',
+        blank=True, verbose_name='Редакторы')
 
     class Meta:
         verbose_name = 'Организация'
@@ -44,9 +53,13 @@ class Employee(models.Model):
     surname = models.CharField('Фамилия', max_length=128)
     middlename = models.CharField('Отчество', max_length=128, blank=True)
     position = models.CharField('Должность', max_length=128, blank=True)
-    organizations = models.ManyToManyField(
-        Organization, related_name='employees',
-        blank=True, verbose_name='Организации')
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.SET_NULL,
+        related_name='employees',
+        blank=True,
+        null=True,
+        verbose_name='Организация')
 
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{8,15}$',
@@ -62,6 +75,8 @@ class Employee(models.Model):
         validators=[phone_regex, UniquePhoneValidator],
         max_length=17,
         blank=True,
+        null=True,
+        unique=True,
         verbose_name='Личный телефон')
     fax = models.CharField(
         validators=[phone_regex],
@@ -74,17 +89,27 @@ class Employee(models.Model):
         verbose_name_plural = 'Сотрудники'
         ordering = ('surname', 'name',)
         indexes = [
-            models.Index(fields=('name', 'surname', 'middlename')),
+            models.Index(fields=('name', 'surname', 'middlename',
+                                 'work_phone', 'personal_phone', 'fax')),
         ]
-
-    def __str__(self):
-        return self.surname + ' ' + self.name
-
-    def clean(self):
-        if not (self.personal_phone or self.work_phone or self.fax):
-            raise ValidationError('Хотя бы один телефон обязателен')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name', 'surname', 'middlename', 'organization'),
+                name='FIO'),
+        )
 
     @property
     def full_name(self):
         fname = f'{self.surname} {self.name} {self.middlename}'.strip()
         return fname
+
+    def clean(self):
+        if not (self.personal_phone or self.work_phone or self.fax):
+            raise ValidationError('Хотя бы один телефон обязателен')
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(Employee, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return self.surname + ' ' + self.name

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Employee, Organization, User
+from .validators import UniquePhoneValidator
 
 
 def phone_required(fields):
@@ -21,7 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         fields = ('first_name', 'last_name', 'username',
-                  'bio', 'email', 'role')
+                  'email')
         model = User
 
 
@@ -49,14 +50,19 @@ class EmployeeListSerializer(ModelSerializer):
         validators = [
             phone_required(
                 fields=('work_phone', 'personal_phone')
-            )
+            ),
+            UniquePhoneValidator(fields)
         ]
 
 
 class OrganizationsListSerializer(ModelSerializer):
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
 
     class Meta:
-        fields = ('id', 'name', 'address', 'description')
+        fields = ('id', 'name', 'address', 'description', 'author')
         model = Organization
 
 

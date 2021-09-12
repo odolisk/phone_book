@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from .models import Organization, User
@@ -37,6 +38,16 @@ def obtain_token(request):
                     status=status.HTTP_200_OK)
 
 
+class MyOrgView(viewsets.ModelViewSet):
+    pagination_class = CustomPageNumberPagination
+    permission_classes = (permissions.IsAuthenticated, )
+    serializer_class = OrganizationsListSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Organization.objects.filter(Q(author=user) | Q(editors=user))
+
+
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     pagination_class = CustomPageNumberPagination
@@ -49,6 +60,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         if self.action == 'list':
             return OrganizationsListSerializer
         return OrganizationsRetriveSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
