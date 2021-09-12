@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from .models import Employee, Organization, User
-from .validators import UniquePhoneValidator
 
 
 def phone_required(fields):
@@ -34,7 +33,38 @@ class ModelSerializer(serializers.ModelSerializer):
                     if v not in [None, [], '', {}])
 
 
-class EmployeeSerializer(ModelSerializer):
+class EmployeeWriteSerializer(ModelSerializer):
+    organization = serializers.SlugRelatedField(
+        slug_field='name',
+        read_only=True
+    )
+
+    class Meta:
+        model = Employee
+        fields = ('pk', 'name', 'middlename', 'surname', 'personal_phone',
+                  'work_phone', 'fax', 'organization')
+        read_only_fields = ('organization', )
+
+        def validate(self, data):
+            if not (data['work_phone']
+                    or data['personal_phone']
+                    or data['fax']):
+                raise serializers.ValidationError(
+                    'Должен быть заполнен хотя бы один телефон')
+            name = data['name']
+            middlename = data['middlename']
+            surname = data['surname']
+            organization = data['organization']
+            if Employee.objects.get(
+                name=name, middlename=middlename,
+                    surname=surname, organization=organization):
+                raise serializers.ValidationError(
+                    f'Сотрудник {surname} {name} {middlename}'
+                    f'уже есть в организации {organization}!')
+            return data
+
+
+class EmployeeReadSerializer(ModelSerializer):
 
     class Meta:
         model = Employee
@@ -47,15 +77,9 @@ class EmployeeListSerializer(ModelSerializer):
         model = Employee
         fields = ('id', 'full_name', 'position',
                   'work_phone', 'personal_phone')
-        validators = [
-            phone_required(
-                fields=('work_phone', 'personal_phone')
-            ),
-            UniquePhoneValidator(fields)
-        ]
 
 
-class OrganizationsListSerializer(ModelSerializer):
+class OrganizationListSerializer(ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -66,7 +90,7 @@ class OrganizationsListSerializer(ModelSerializer):
         model = Organization
 
 
-class OrganizationsRetriveSerializer(ModelSerializer):
+class OrganizationRetriveSerializer(ModelSerializer):
     employees = EmployeeListSerializer(many=True, read_only=True)
 
     class Meta:

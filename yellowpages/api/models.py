@@ -1,9 +1,9 @@
+from rest_framework.exceptions import ValidationError as ValErr
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-
-from .validators import UniquePhoneValidator
 
 
 class User(AbstractUser):
@@ -72,7 +72,7 @@ class Employee(models.Model):
         verbose_name='Рабочий телефон'
         )
     personal_phone = models.CharField(
-        validators=[phone_regex, UniquePhoneValidator],
+        validators=[phone_regex],
         max_length=17,
         blank=True,
         null=True,
@@ -88,15 +88,16 @@ class Employee(models.Model):
         verbose_name = 'Сотрудник'
         verbose_name_plural = 'Сотрудники'
         ordering = ('surname', 'name',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'surname', 'middlename', 'organization'],
+                name='unique_employee'
+            )
+        ]
         indexes = [
             models.Index(fields=('name', 'surname', 'middlename',
                                  'work_phone', 'personal_phone', 'fax')),
         ]
-        constraints = (
-            models.UniqueConstraint(
-                fields=('name', 'surname', 'middlename', 'organization'),
-                name='FIO'),
-        )
 
     @property
     def full_name(self):
@@ -108,7 +109,11 @@ class Employee(models.Model):
             raise ValidationError('Хотя бы один телефон обязателен')
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        try:
+            print('&&&&&&&&&&&&&&&')
+            self.full_clean()
+        except ValidationError as err:
+            raise ValErr(err)
         return super(Employee, self).save(*args, **kwargs)
 
     def __str__(self):

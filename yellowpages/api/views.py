@@ -10,8 +10,9 @@ from .models import Organization, User
 from .paginators import CustomPageNumberPagination
 from .permissions import IsAuthorOrAuthReadOnly
 from .serializers import (
-    EmployeeSerializer, OrganizationsListSerializer,
-    OrganizationsRetriveSerializer, UserObtainTokenSerializer)
+    EmployeeListSerializer, EmployeeReadSerializer, EmployeeWriteSerializer,
+    OrganizationListSerializer, OrganizationRetriveSerializer,
+    UserObtainTokenSerializer)
 
 
 @api_view(('POST',))
@@ -38,10 +39,22 @@ def obtain_token(request):
                     status=status.HTTP_200_OK)
 
 
+class EditorAddView(viewsets.ModelViewSet):
+    pagination_class = CustomPageNumberPagination
+    # permission_classes = (permissions.IsAuthenticated, )
+    # serializer_class = OrganizationsListSerializer
+    # http_method_names = ('post', )
+
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     return Organization.objects.filter(Q(author=user) | Q(editors=user))
+
+
 class MyOrgView(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
     permission_classes = (permissions.IsAuthenticated, )
-    serializer_class = OrganizationsListSerializer
+    serializer_class = OrganizationListSerializer
+    http_method_names = ('get', )
 
     def get_queryset(self):
         user = self.request.user
@@ -58,20 +71,31 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == 'list':
-            return OrganizationsListSerializer
-        return OrganizationsRetriveSerializer
+            return OrganizationListSerializer
+        return OrganizationRetriveSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
-    serializer_class = EmployeeSerializer
     pagination_class = CustomPageNumberPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EmployeeListSerializer
+        if self.action in ('retrive', 'head'):
+            return EmployeeReadSerializer
+        return EmployeeWriteSerializer
 
     def get_queryset(self):
         organization_id = self.kwargs.get('organization_id')
         organization = get_object_or_404(Organization, id=organization_id)
         return organization.employees.all()
+
+    def perform_create(self, serializer):
+        org_id = self.kwargs.get('organization_id')
+        organization = get_object_or_404(Organization, id=org_id)
+        serializer.save(organization=organization)

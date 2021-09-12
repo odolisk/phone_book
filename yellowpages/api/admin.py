@@ -16,7 +16,8 @@ class OrganizationAdmin(admin.ModelAdmin):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'surname', 'name', 'middlename',
-                    'position', 'personal_phone', 'work_phone', 'fax')
+                    'position', 'personal_phone', 'work_phone',
+                    'fax', 'organization')
     search_fields = ('surname', 'name', 'middlename',)
     ordering = ('surname', 'name',)
 
