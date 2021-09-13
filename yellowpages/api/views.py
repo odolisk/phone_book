@@ -8,10 +8,10 @@ from django.shortcuts import get_object_or_404
 
 from .models import Organization, User
 from .paginators import CustomPageNumberPagination
-from .permissions import IsAuthorOrAuthReadOnly
+from api.permissions import IsAuthor, IsAuthorOrAuthReadOnly
 from .serializers import (
     EmployeeListSerializer, EmployeeReadSerializer, EmployeeWriteSerializer,
-    OrganizationListSerializer, OrganizationRetriveSerializer,
+    OrganizationListSerializer, OrganizationRetriveSerializer, UserSerializer,
     UserObtainTokenSerializer)
 
 
@@ -40,14 +40,36 @@ def obtain_token(request):
 
 
 class EditorAddView(viewsets.ModelViewSet):
-    pagination_class = CustomPageNumberPagination
-    # permission_classes = (permissions.IsAuthenticated, )
-    # serializer_class = OrganizationsListSerializer
-    # http_method_names = ('post', )
+    pass
 
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     return Organization.objects.filter(Q(author=user) | Q(editors=user))
+
+class EditorRemoveView(viewsets.ModelViewSet):
+    pass
+
+
+class EditorsListView(viewsets.ModelViewSet):
+    pagination_class = CustomPageNumberPagination
+    permission_classes = (IsAuthor, )
+    serializer_class = UserSerializer
+    http_method_names = ('get', )
+
+    def get_queryset(self):
+        organization_id = self.kwargs.get('organization_id')
+        organization = get_object_or_404(Organization, id=organization_id)
+
+        return organization.editors.all()
+
+    def list(self, request, organization_id):
+        organization_id = self.kwargs.get('organization_id')
+        organization = get_object_or_404(Organization, id=organization_id)
+        queryset = organization.editors.all()
+        serializer = self.get_serializer(queryset, many=True)
+        if request.user == organization.author:
+            return Response(data=serializer.data,
+                            status=status.HTTP_200_OK)
+        return Response(data={organization.name: 'Доступ к редакторам '
+                              'только у создателя оранизации!'},
+                        status=status.HTTP_401_UNAUTHORIZED)
 
 
 class MyOrgView(viewsets.ModelViewSet):
@@ -66,7 +88,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
     filter_backends = (filters.SearchFilter,)
     permission_classes = (IsAuthorOrAuthReadOnly, )
-    search_fields = ('name',)
+    search_fields = ('name', 'employees__name', 'employees__middlename', 'employees__surname')
     lookup_field = 'id'
 
     def get_serializer_class(self):

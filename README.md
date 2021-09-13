@@ -32,5 +32,24 @@ python manage.py migrate
 ```python
  python manage.py runserver 
 ```
+### Эндпоинты
 
-Документация доступна по адресу http://Localhost:8000/redoc/
+- Базовый /api/v1/
+
+#### Аутентификация
+-  Получить токен /auth/token/ (в запросе email и password)
+
+#### Общие (Все начинаются с базового)
+
+- Организации **organizations/**
+- Сотрудники **organizations/\<int:organization_id\>/employees/**
+- Список редакторов организации **organizations/\<organization_id\>/editors/**
+- Добавить редактора (не реализовано) **organizations/\<int:organization_id\>/add_editor/**
+- Удалить редактора (не реализовано) **organizations/\<int:organization_id\>/remove_editor/**
+- Список организаций, где я редактор или автор **my_org/**
+
+### Не реализованные функции
+
+- Глобальный поиск на эндпоинте search
+- Добавление редектора для организации
+- Удаление редактора у организации

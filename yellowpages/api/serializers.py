@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import filters, serializers
 
 from .models import Employee, Organization, User
 
@@ -84,6 +84,8 @@ class OrganizationListSerializer(ModelSerializer):
         slug_field='username',
         read_only=True
     )
+    filter_backends = (filters.SearchFilter,)
+    filterset_fields = ('name', 'employee__full_name')
 
     class Meta:
         fields = ('id', 'name', 'address', 'description', 'author')
@@ -96,3 +98,7 @@ class OrganizationRetriveSerializer(ModelSerializer):
     class Meta:
         fields = ('id', 'name', 'address', 'description', 'employees')
         model = Organization
+
+
+class EditorAddSerializer(serializers.Serializer):
+    pass
