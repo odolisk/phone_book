@@ -110,7 +110,6 @@ class Employee(models.Model):
 
     def save(self, *args, **kwargs):
         try:
-            print('&&&&&&&&&&&&&&&')
             self.full_clean()
         except ValidationError as err:
             raise ValErr(err)

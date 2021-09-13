@@ -88,7 +88,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPageNumberPagination
     filter_backends = (filters.SearchFilter,)
     permission_classes = (IsAuthorOrAuthReadOnly, )
-    search_fields = ('name', 'employees__name', 'employees__middlename', 'employees__surname')
+    search_fields = ('name', 'employees__name', 'employees__middlename',
+                     'employees__surname')
     lookup_field = 'id'
 
     def get_serializer_class(self):

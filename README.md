@@ -32,12 +32,14 @@ python manage.py migrate
 ```python
  python manage.py runserver 
 ```
+
 ### Эндпоинты
 
 - Базовый /api/v1/
 
 #### Аутентификация
--  Получить токен /auth/token/ (в запросе email и password)
+
+- Получить токен /auth/token/ (в запросе email и password)
 
 #### Общие (Все начинаются с базового)
 
@@ -47,6 +49,10 @@ python manage.py migrate
 - Добавить редактора (не реализовано) **organizations/\<int:organization_id\>/add_editor/**
 - Удалить редактора (не реализовано) **organizations/\<int:organization_id\>/remove_editor/**
 - Список организаций, где я редактор или автор **my_org/**
+
+### Дополнительно
+
+- Для изменения количества результатов при пагинации нужно добавить /?size=<количество результатов>
 
 ### Не реализованные функции
 
